@@ -46,7 +46,13 @@ namespace RiotEmoteConsole {
                 emote_code = $"Invalid emote code '{value}'";
             }
 
-            Process.Start("xdotool", $"type \"{emote_code}\"");
+            var p = (int)Environment.OSVersion.Platform;
+            if (p == 4 || p == 6 || p == 128) {
+                // linux
+                Process.Start("xdotool", $"type \"{emote_code}\"");
+            } else {
+                SendKeys.Send(emote_code);
+            }
         }
     }
 }
