@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Text;
 
 namespace RiotEmoteConsole {
     public enum Mode {
@@ -32,14 +33,33 @@ namespace RiotEmoteConsole {
             Mode mode = Mode.Insert;
 
             EmoteMap = new Dictionary<string, string>();
+            string key = "";
+            StringBuilder content_builder = new StringBuilder();
+            bool saving_content = false;
             using (var f = File.OpenRead(Path.Combine(Directory.GetParent(Application.ExecutablePath).FullName, "emotemap.txt")))
             using (var reader = new StreamReader(f))
             {
                 while (!reader.EndOfStream)
                 {
                     var line = reader.ReadLine();
+                    if (saving_content) {
+                        if (line == "--" || line == "--emote") {
+                            if (line == "--emote") {
+                                EmoteMap[key] = $"![](mxc://{content_builder.ToString()})";
+                            } else {
+                                EmoteMap[key] = content_builder.ToString();
+                            }
+                            saving_content = false;
+                            content_builder = new StringBuilder();
+                        } else {
+                            content_builder.Append(line);
+                        }
+                    } else {
+                        if (line.Trim() == "" || line.StartsWith("#", StringComparison.InvariantCulture)) continue;
+                        key = line;
+                        saving_content = true;
+                    }
                     var split = line.Split(' ');
-                    EmoteMap[split[0].ToLowerInvariant()] = $"![](mxc://{split[1]})";
                 }
             }
 
@@ -61,7 +81,7 @@ namespace RiotEmoteConsole {
                     var old_clip_content = GetLinuxClipboard();
 
                     Console.WriteLine($"OLD CLIPBOARD:\n[{old_clip_content}]\n");
-                    var proc = Process.Start("sh", "-c 'xdotool key ctrl+a; sleep 0.5; xdotool key ctrl+c'");
+                    var proc = Process.Start("sh", "-c 'xdotool key ctrl+a; sleep 0.5; xdotool key ctrl+x'");
                     proc.WaitForExit();
 
                     var new_clip_content = GetLinuxClipboard();
